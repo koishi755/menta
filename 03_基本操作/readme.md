@@ -47,6 +47,7 @@ LANG=ja_JP.UTF-8
 <br>
 実行例
 LANG変数を削除した後、dateコマンドの結果が英語となります。
+
 ![](https://storage.googleapis.com/zenn-user-upload/97624cc86ef7-20240717.png)
 
 ## 環境変数を設定
