@@ -49,7 +49,7 @@ LANG=ja_JP.UTF-8
 LANG変数を削除した後、dateコマンドの結果が英語となります。
 
 
-```
+```bash
 # 現在の環境変数LANGが日本語となっていることを確認
 [testuser@localhost ~]$ echo $LANG
 ja_JP.UTF-8
