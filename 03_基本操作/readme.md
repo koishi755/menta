@@ -48,7 +48,27 @@ LANG=ja_JP.UTF-8
 実行例
 LANG変数を削除した後、dateコマンドの結果が英語となります。
 
-![](https://storage.googleapis.com/zenn-user-upload/97624cc86ef7-20240717.png)
+
+```
+# 現在の環境変数LANGが日本語となっていることを確認
+[testuser@localhost ~]$ echo $LANG
+ja_JP.UTF-8
+
+# dateコマンドを実行した時、日本語で表示されます。
+[testuser@localhost ~]$ date
+2024年  7月 26日 金曜日 19:52:29 JST
+
+# LANG変数を削除
+[testuser@localhost ~]$ unset LANG
+
+# LANG変数を確認すると何もないことが分かります。
+[testuser@localhost ~]$ echo $LANG
+
+# dateコマンドを実行すると英語表記になりました。
+[testuser@localhost ~]$ date
+Fri Jul 26 19:52:51 JST 2024
+```
+
 
 ## 環境変数を設定
 
