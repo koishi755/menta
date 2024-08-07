@@ -1060,3 +1060,485 @@ dir1/dir2/dir3/test-file2
 ```
 
 
+
+#### TESTS（テスト）
+
+
+
+テストでは、現在調査中のファイルに対して他のファイルを参照する場合があります。そのため、次のテストが現在調査中のファイルをどのように扱うかを理解しておくと便利です。
+
+数値引数|説明
+-|-
++n|n より大きい場合
+-n|n より小さい場合
+n|ちょうど n の場合
+
+| オプション                      | 説明                                                                                                                                                              |
+|---------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -empty                        | ファイルが空である（サイズがゼロバイトである）場合に真を返します。                                                                                                  |
+| -executable                   | ファイルが実行可能である場合に真を返します。システムのPATH環境変数によっては、-executableは実行可能なバイナリがパスにない場合もあります。この場合、-execを使用してファイルを直接テストできます。 |
+| -name pattern                 | ファイル名が指定したpatternに一致する場合に真を返します。patternは*（任意の文字列）、?（任意の1文字）、[]（文字クラス）を含むパターンが指定できます。                                      |
+| -size n[cwbkMG]               | ファイルサイズがnで指定された単位（バイト、ワード、ブロック、キロバイト、メガバイト、ギガバイト）と一致する場合に真を返します。                                    |
+| -ctime n   | ファイルのステータスが最後に変更されたのが n*24 時間以内、n*24 時間以上、またはちょうど n*24 時間前であるかどうかをテストします。                 |
+| -mmin n    | ファイルのデータが最後に変更されたのが n 分以内、n 分以上、またはちょうど n 分前であるかどうかをテストします。                                                       |
+| -mtime n   | ファイルのデータが最後に変更されたのが n*24 時間以内、n*24 時間以上、またはちょうど n*24 時間前であるかどうかをテストします。                                         |
+| -user username                | ファイルの所有者がusernameである場合に真を返します。                                                                                                               |
+type|検索するファイルの種類を指定るすることができます。
+
+<br>
+
+type一覧<br>
+
+
+| 種類 | 説明                                                           |
+|------|----------------------------------------------------------------|
+| b    | ブロック (バッファリングされた) 特殊ファイル                   |
+| c    | キャラクター (バッファリングされない) 特殊ファイル             |
+| d    | ディレクトリ                                                   |
+| p    | 名前付きパイプ (FIFO)                                          |
+| f    | 通常ファイル                                                   |
+| l    | シンボリックリンク; -L オプションまたは -follow オプションが有効な場合は常に false ただし、シンボリックリンクが壊れている場合は例外。-L が有効な場合にシンボリックリンクを検索するには -xtype を使用 |
+| s    | ソケット                                                       |
+
+<br>
+
+実行例
+
+```bash
+# テスト用ファイル作成
+[testuser@localhost work]$ mkdir -p dir1/dir2/dir3 \
+ && touch dir1/dir2/test-file1 dir1/dir2/dir3/test-file2 dir1/find-file \
+ && echo "find-test" > dir1/dir2/test-file1
+
+# ディレクトリの構造を確認
+[testuser@localhost work]$ tree
+.
+└── dir1
+    ├── dir2
+    │   ├── dir3
+    │   │   └── test-file2
+    │   └── test-file1
+    └── find-file
+
+# ファイルが0バイト(-empty)かつファイル名にfindと入るファイルを検索
+[testuser@localhost work]$ find dir1 -empty -name find*
+dir1/find-file
+
+# ディレクトリのみ表示
+[testuser@localhost work]$ find dir1 -type d
+dir1
+dir1/dir2
+dir1/dir2/dir3
+
+# 10日以内に変更があったファイルを検索
+[testuser@localhost work]$ find -ctime -10 -type f
+./dir1/dir2/dir3/test-file2
+./dir1/dir2/test-file1
+./dir1/find-file
+
+# 10日以上前に変更があった、/etc/sshの配下のファイルを検索
+[testuser@localhost work]$ sudo find /etc/ssh/ -ctime +10 -type f | sudo xargs ls -l
+-rw-r--r--. 1 root root     578094  7月 10 00:15 /etc/ssh/moduli
+-rw-r--r--. 1 root root       1921  7月 10 00:15 /etc/ssh/ssh_config
+-rw-r--r--. 1 root root        581  7月 10 00:16 /etc/ssh/ssh_config.d/50-redhat.conf
+```
+
+
+#### ACTIONS（アクション）
+
+
+アクションは副作用を持ち、通常、成功したかどうかに基づいて真または偽を返します。
+
+
+| オプション                      | 説明                                                                                                                                                          |
+|---------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -delete                       | 現在のファイルを削除します。このアクションは、-depthオプションを暗示します。                                                                                  |
+| -exec command {} +            | 現在のファイルを引数としてcommandを実行します。{}+は、見つかったすべてのファイルを1回のコマンド実行で処理することを意味します。                             |
+| -exec command {} \;           | 現在のファイルを引数としてcommandを実行します。{}\;は、見つかった各ファイルごとに1回のコマンド実行を意味します。                                           |
+| -ok command {} \;             | -execと似ていますが、commandを実行する前にユーザーに確認を求めます。確認が取れた場合のみコマンドが実行されます。                                            |
+| -print0                       | 現在のファイルの名前をNUL文字で区切って標準出力に表示します。ファイル名にスペースや特殊文字を含むファイルの処理に役立ちます。                                     |
+| -printf format                | formatに従って現在のファイルの情報を標準出力に表示します。フォーマット文字列には、%p（ファイルのパス）、%f（ファイル名）、%s（サイズ）、%t（最終変更時間）などがあります。 |
+| -printx                       | 現在のファイルの名前を標準出力に表示します。-print0と似ていますが、出力はNUL文字ではなく改行で区切られます。                                                  |
+| -quit                         | findをすぐに終了します。検索が終了する前にすべてのファイルを表示することなく、検索を停止します。                                                             |
+| -ls                           | -printと同様に現在のファイルの情報を表示しますが、ls -lコマンドの出力形式で表示します。                                                                     |
+| -fprint file                  | fileに現在のファイルの名前を出力します。-printのような動作をし、ファイルを削除します。                                                                       |
+
+<br>
+
+実行例
+
+```bash
+# テスト用のディレクトリ、ファイルの作成
+[testuser@localhost work]$ mkdir -p dir1/dir2/dir3 \
+ && touch dir1/dir2/test-file1 dir1/dir2/dir3/test-file2 dir1/find-file \
+ && echo "find-test" > dir1/dir2/test-file1
+
+# ディレクトリの構造を確認
+[testuser@localhost work]$ tree
+.
+└── dir1
+    ├── dir2
+    │   ├── dir3
+    │   │   └── test-file2
+    │   └── test-file1
+    └── find-file
+
+# ファイルが0バイト(-empty)かつファイル名にfindと入るファイルを削除
+[testuser@localhost work]$ find dir1 -empty -name find* -delete
+
+#  find-fileが無くなっていることが確認できます。
+[testuser@localhost work]$ tree
+.
+└── dir1
+    └── dir2
+        ├── dir3
+        │   └── test-file2
+        └── test-file1
+
+3 directories, 2 files
+```
+
+### locateコマンド
+
+locateは、updatedbによって作成された1つ以上のデータベースを読み取り、少なくとも1つのパターンに一致するファイル名を標準出力に1行ずつ書き出します。
+
+<br>
+
+書式
+
+```bash
+locate [オプション]... パターン...
+```
+
+<br>
+
+オプション
+
+| オプション | 説明 |
+| - | - |
+| -A, --all | すべてのパターンに一致するエントリのみを表示します。 |
+| -b, --basename | 指定されたパターンに対してベース名のみを一致させます。これは--wholenameの反対です。 |
+| -i, --ignore-case | パターンの一致時に大文字と小文字を区別しません。 |
+| -w, --wholename | 指定されたパターンに対して完全なパス名のみを一致させます。これはデフォルトの動作です。反対は--basenameで指定できます。 |
+
+
+
+### updatedbコマンド
+
+updatedbは、locateによって使用されるデータベースを作成または更新します。データベースがすでに存在する場合、そのデータは再度ディレクトリを読み取らないように再利用されます。updatedbは通常、cronによって毎日実行され、デフォルトのデータベースを更新します。
+
+
+書式
+
+```bash
+updatedb [オプション]...
+```
+
+<br>
+
+オプション
+
+| オプション | 説明 |
+| - | - |
+| -U, --database-root PATH | PATHにルートされたファイルシステムサブツリーのスキャン結果のみを生成されたデータベースに保存します。デフォルトではファイルシステム全体がスキャンされます。locate(1)は、PATHの形式に関係なく、シンボリックリンクを含まない絶対パス名としてエントリを出力します。 |
+| -o, --output FILE | デフォルトのデータベースを使用する代わりに、データベースをFILEに書き出します。 |
+| -l, --require-visibility FLAG | 生成されたデータベースで「ファイルの可視性を報告前に要求する」フラグをFLAGに設定します。FLAGが0またはnoの場合、またはデータベースファイルが「他のユーザー」によって読み取れる場合、またはslocateに所有されていない場合、locate(1)はデータベースエントリを出力します。FLAGが1またはyes（デフォルト）の場合、locate(1)は各エントリの親ディレクトリの権限をチェックしてから報告します。ファイルの存在を他のユーザーから完全に隠すには、データベースグループをslocateに設定し、データベースの権限がlocate(1)以外の方法でユーザーがデータベースを読み取ることを禁止します。この可視性フラグは、データベースがslocateに所有されており、「他のユーザー」によって読み取られない場合のみチェックされます。 |
+| -v, --verbose | 見つかったファイルのパス名を標準出力に出力します。 |
+
+
+<br>
+
+実行例
+
+```bash
+# テスト用のディレクトリ、ファイルを作成
+[testuser@localhost work]$ mkdir -p dir1/dir2/dir3 \
+ && touch dir1/dir2/locate-test-file1 dir1/dir2/dir3/locate-test-file2
+
+# locateコマンドでlocate-test-file1を検索するが何も見つからない
+[testuser@localhost work]$ locate locate-test-file1
+[testuser@localhost work]$
+
+# -Uでdir1をスキャンして/var/lib/mlocate/mlocate.dbを更新
+[testuser@localhost work]$ sudo updatedb -U dir1/
+
+# locate-test-file1が検索できた
+[testuser@localhost work]$ locate locate-test-file1
+/home/testuser/work/dir1/dir2/locate-test-file1
+
+# 新しくテスト用のファイルを作成
+[testuser@localhost work]$ touch dir1/dir2/locate-test-file3
+
+# locateで検索できない
+[testuser@localhost work]$ locate locate-test-file3
+[testuser@localhost work]$
+
+# dir1 の内容をスキャンしてcustom_dbを作成する
+[testuser@localhost work]$ sudo updatedb -U dir1 -o custom_db
+
+# 通常の/var/lib/mlocate/mlocate.dbからでは検索できない
+[testuser@localhost work]$ locate locate-test-file3
+[testuser@localhost work]$
+
+# 検索対象にcustom_dbを指定すると検索できる
+[testuser@localhost work]$ locate -d custom_db locate-test-file3
+/home/testuser/work/dir1/dir2/locate-test-file3
+```
+
+
+## テキスト操作
+
+テキスト操作のためのコマンドとして、grep、sed、および awk があります。これらのコマンドは、ファイル内のテキストを検索、編集、処理するために使用されます。
+
+### grep
+
+
+
+
+grep は、各 FILE で PATTERNS を検索します。PATTERNS は、改行文字で区切られた 1 つまたは複数のパターンであり、grep はパターンに一致する各行を出力します。通常、PATTERNS はシェルコマンドで grep を使用する際に引用符で囲む必要があります。
+
+FILE が「-」の場合は標準入力を意味します。FILE が指定されない場合、再帰的検索は作業ディレクトリを調べ、非再帰的検索は標準入力を読み取ります。
+
+<br>
+
+書式
+
+```bash
+grep [オプション...] パターン [ファイル...]
+grep [オプション...] -e パターン ... [ファイル...]
+grep [オプション...] -f パターンファイル ... [ファイル...]
+```
+
+<br>
+
+オプション
+
+| オプション | 説明 |
+| - | - |
+| -E, --extended-regexp | PATTERNS を拡張正規表現 (ERE) として解釈します。 |
+| -F, --fixed-strings | PATTERNS を固定文字列として解釈し、正規表現とはしません。 |
+| -G, --basic-regexp | PATTERNS を基本正規表現 (BRE) として解釈します。これがデフォルトです。 |
+
+<br>
+
+マッチング制御
+
+| オプション        | 説明                                                                                  |
+| -                | -                                                                                    |
+| -e PATTERNS, --regexp=PATTERNS | PATTERNS をパターンとして使用します。このオプションを複数回使用するか、-f (--file) オプションと組み合わせると、指定されたすべてのパターンを検索します。このオプションは、パターンが「-」で始まる場合の保護にも使用できます。 
+| -i, --ignore-case  | パターンおよび入力データの大文字と小文字を無視し、大文字と小文字が異なるだけの文字が一致するようにします。   |
+| -v, --invert-match | 一致の意味を反転させ、一致しない行を選択します。   
+
+```bash
+# テスト用ファイルの作成
+[testuser@localhost work]$ cat <<EOF > grep_test1
+apple
+APPLE
+banana
+cherry
+grape
+EOF
+
+# 複数のパターンをマッチする
+[testuser@localhost work]$ grep -e apple -e cherry grep_test1
+apple
+cherry
+
+# 通常、大文字と小文字は区別され、小文字のappleしか表示されません
+[testuser@localhost work]$ grep apple grep_test1
+apple
+
+# -iオプションは大文字と小文字を無視するため、大文字のAPPLEも表示されました
+[testuser@localhost work]$ grep -i apple grep_test1
+apple
+APPLE
+
+# -vはパターンがマッチした行が表示されません。
+[testuser@localhost work]$ grep -v apple grep_test1
+APPLE
+banana
+cherry
+grape
+```
+<br>
+
+**正規表現**
+
+正規表現は、文字列の検索、マッチング、および操作のためのパターンを指定する方法です。
+
+<br>
+
+ 基本的な構文
+
+| 構文        | 説明                                                  |
+|-------------|-------------------------------------------------------|
+| .         | 任意の1文字にマッチ                                    |
+| ^         | 行の先頭にマッチ                                        |
+| $         | 行の末尾にマッチ                                        |
+| []        | 文字クラス。中括弧内の任意の1文字にマッチ                |
+| [^]       | 否定の文字クラス。中括弧内の文字以外の任意の1文字にマッチ |
+
+
+```bash
+# 任意の1文字にマッチ   
+[testuser@localhost work]$ grep -E 'n.n' grep_test1
+banana
+
+# 行の先頭にマッチ 
+[testuser@localhost work]$ grep -E '^a' grep_test1
+apple
+
+# 行の末尾にマッチ 
+[testuser@localhost work]$ grep -E 'y$' grep_test1
+cherry
+```
+
+<br>
+
+ 文字クラス
+
+| クラス      | 説明                                                  |
+|-------------|-------------------------------------------------------|
+| [abc]     | a, b, c のいずれかにマッチ                       |
+| [a-z]     | 小文字のアルファベット a から z のいずれかにマッチ  |
+| [^abc]    | a, b, c 以外の任意の文字にマッチ                  |
+
+
+```bash
+# a, b, c のいずれかにマッチ   
+[testuser@localhost work]$ grep -E '[abc]' grep_test1
+apple
+banana
+cherry
+grape
+```
+
+ 量指定子
+
+| オペレーター | 説明                                                  |
+|--------------|-------------------------------------------------------|
+| ?          | 前の項目は任意で、最大1回マッチします。                  |
+| *          | 前の項目は0回以上マッチします。                          |
+| +          | 前の項目は1回以上マッチします。                          |
+| {n}        | 前の項目は正確にn回マッチします。                       |
+| {n,}       | 前の項目はn回以上マッチします。                         |
+| {,m}       | 前の項目は最大m回マッチします。 (GNU拡張)               |
+| {n,m}      | 前の項目は少なくともn回、最大m回マッチします。           |
+
+
+
+```bash
+# テスト用ファイルの作成
+[testuser@localhost work]$ cat <<EOS > grep_test1
+SATO: 03-1234-5678
+TANAKA: 090-8765-4321
+Office: 045-987-6543
+TEST: 123-456
+EOS
+
+# 電話番号の形式が表示されます
+[testuser@localhost work]$ grep -E '[0-9]{2,4}-[0-9]{2,4}-[0-9]{4}' grep_test1
+SATO: 03-1234-5678
+TANAKA: 090-8765-4321
+Office: 045-987-6543
+
+# 3桁で始まる電話番号を表示
+# [^0-9]0~9の数字とマッチしない
+# [0-9]{3}の数字とのマッチを3回繰り返す
+[testuser@localhost work]$ grep -E '[^0-9][0-9]{3}-' grep_test1
+TANAKA: 090-8765-4321
+Office: 045-987-6543
+TEST: 123-456
+```
+
+### sed
+
+sed はストリームエディタです。ストリームエディタは、入力ストリーム（ファイルやパイプラインからの入力）に対して基本的なテキスト変換を行うために使用されます。一部の面では、スクリプト化された編集を許可するエディタ（例えば ed）に似ていますが、sed は入力を一度だけ処理するため、より効率的です。しかし、sed が他のタイプのエディタと特に異なるのは、パイプライン内のテキストをフィルタリングできる能力です。
+
+```bash
+sed [オプション]... {他にスクリプトがない場合はスクリプトのみ} [入力ファイル]...
+```
+
+<br>
+オプション
+
+| オプション | 説明                                         |
+|------------|----------------------------------------------|
+| -e       | 複数の編集コマンドを指定する場合に使用          |
+| -f       | 編集コマンドを記述したファイルを指定            |
+| -i       | ファイルを直接編集 (インプレース編集)           |
+| -n       | 出力を抑制し、明示的に指定した行だけを出力       |
+
+<br>
+コマンド
+
+| コマンド  | 説明                                              |
+|-----------|---------------------------------------------------|
+| s/pattern/replacement/ | パターンを置換                        |
+| d       | 行を削除                                          |
+| p       | 行を表示 (`-n` オプションと併用)                    |
+| a\text  | 行の後にテキストを追加                             |
+| i\text  | 行の前にテキストを挿入                             |
+| c\text  | 行をテキストで置換                                 |
+| q       | 処理を終了                                        |
+
+
+
+```bash
+[testuser@localhost work]$ cat <<EOS > sed_test1
+hogehoge
+foofoo
+barbar
+hogehoge
+EOS
+
+# 各行の最初にマッチしたhogeをtestに変換
+[testuser@localhost work]$ sed 's/hoge/test/' sed_test1
+testhoge
+foofoo
+barbar
+testhoge
+
+# ファイル自体はこのままだと変換されません
+[testuser@localhost work]$ cat sed_test1
+hogehoge
+foofoo
+barbar
+hogehoge
+
+# -iオプションを使うとファイルをそのまま編集できます。
+[testuser@localhost work]$ sed -i 's/hoge/test/' sed_test1
+[testuser@localhost work]$ cat sed_test1
+testhoge
+foofoo
+barbar
+testhoge
+
+# gフラグを使用すると各行の全てのマッチする文字が変換される
+[testuser@localhost work]$ sed -e 's/hoge/test/g' sed_test1
+testtest
+foofoo
+barbar
+testtest
+
+# -e オプションを使用すると同時に別のマッチした文字列を変換できます。
+[testuser@localhost work]$ sed -e 'sg/hoge/test/g' -e 's/foo/abc/' sed_test1
+hogehoge
+abcfoo
+barbar
+hogehoge
+
+# 先頭にhogeがある行を削除。ここにあるように正規表現も使用可能です。
+[testuser@localhost work]$ sed -e '/^hoge/d' sed_test1
+foofoo
+barbar
+
+# 2aは2行目の後に文字列を追記する
+[testuser@localhost work]$ sed '2a\This is appended text.' sed_test1
+hogehoge
+foofoo
+This is appended text.
+barbar
+hogehoge
+```
+
